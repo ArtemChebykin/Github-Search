@@ -1,35 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Container } from "./components/Container";
+import { Search } from "./components/Search";
+import { TheHeader } from "./components/TheHeader";
+import { UserCard } from "./components/UserCard";
+
+import { defaultUser } from "./mock";
+import { useState } from "react";
+import { GithubError, GithubUser, LocalGithubUser } from "./types";
+import { extractLocalUser } from "./utils/extract-ctlocal-user";
+import { isGithubUser } from "./utils/typeguards";
+
+const BASE_URL = "https://api.github.com/users/";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [user, setUser] = useState<LocalGithubUser | null>(defaultUser);
+
+  const fetchUser = async (username: string) => {
+    const url = BASE_URL + username;
+
+    const res = await fetch(url);
+    const user = (await res.json()) as GithubUser | GithubError;
+
+    if (isGithubUser(user)) {
+      setUser(extractLocalUser(user));
+    } else {
+      setUser(null);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Container>
+      <TheHeader />
+      <Search hasError={!user} onSubmit={fetchUser} />
+      {user && <UserCard {...user} />}
+    </Container>
+  );
 }
 
-export default App
+export default App;
